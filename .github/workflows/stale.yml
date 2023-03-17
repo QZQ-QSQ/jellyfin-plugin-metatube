@@ -3,7 +3,9 @@ name: Mark stale issues and pull requests
 on:
   schedule:
     - cron: "0 10 * * *"
-
+# 解决方案
+permissions:
+  contents: write
 jobs:
   stale:
     runs-on: ubuntu-latest
