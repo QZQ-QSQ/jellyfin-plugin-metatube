@@ -2,7 +2,9 @@ name: .NET
 
 on:
   workflow_dispatch:
-
+# 解决方案
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
