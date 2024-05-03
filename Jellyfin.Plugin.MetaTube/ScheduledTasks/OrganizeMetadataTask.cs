@@ -2,7 +2,6 @@ using System.Text.RegularExpressions;
 using Jellyfin.Plugin.MetaTube.Extensions;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.Sorting;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Tasks;
 #if __EMBY__
@@ -10,6 +9,7 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Model.Logging;
 
 #else
+using MediaBrowser.Controller.Sorting;
 using Microsoft.Extensions.Logging;
 using Jellyfin.Data.Enums;
 #endif
@@ -168,7 +168,7 @@ public class OrganizeMetadataTask : IScheduledTask
 
     private static bool HasExternalChineseSubtitle(string basename, IEnumerable<string> files)
     {
-        var r = new Regex(@"\.(chinese|ch[ist]|zh(-(cn|hk|tw|hans|hant))?)\.(ass|srt|ssa|stl|sub|vid|vtt)$",
+        var r = new Regex(@"\.(ch[ist]|zho?(-(cn|hk|sg|tw))?)\.(ass|srt|ssa|smi|sub|idx|psb|vtt)$",
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
         return files.Any(name => r.IsMatch(name) &&
                                  r.Replace(name, string.Empty)

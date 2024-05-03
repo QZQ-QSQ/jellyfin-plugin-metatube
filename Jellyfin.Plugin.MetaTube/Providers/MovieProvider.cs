@@ -24,7 +24,7 @@ public class MovieProvider : BaseProvider, IRemoteMetadataProvider<Movie, MovieI
     private const string GFriends = "GFriends";
     private const string Rating = "JP-18+";
 
-    private static readonly string[] AvBaseSupportedProviderNames = { "DUGA", "FANZA", "Getchu", "MGS", "Pcolle" };
+    private static readonly string[] AvBaseSupportedProviderNames = { "DUGA", "FANZA", "Getchu", "MGS" };
 
 #if __EMBY__
     public MovieProvider(ILogManager logManager) : base(logManager.CreateLogger<MovieProvider>())
@@ -75,7 +75,8 @@ public class MovieProvider : BaseProvider, IRemoteMetadataProvider<Movie, MovieI
         // Distinct and clean blank list
         m.Genres = m.Genres?.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToArray() ?? Array.Empty<string>();
         m.Actors = m.Actors?.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToArray() ?? Array.Empty<string>();
-        m.PreviewImages = m.PreviewImages?.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToArray() ?? Array.Empty<string>();
+        m.PreviewImages = m.PreviewImages?.Where(
+            x => !string.IsNullOrWhiteSpace(x)).Distinct().ToArray() ?? Array.Empty<string>();
 
         // Build parameters.
         var parameters = new Dictionary<string, string>
@@ -191,21 +192,28 @@ public class MovieProvider : BaseProvider, IRemoteMetadataProvider<Movie, MovieI
                 pid.Update != true, cancellationToken));
         }
 
+        if (Configuration.EnableMovieProviderFilter)
+        {
+            if (Configuration.GetMovieProviderFilter() is { } filter &&
+                filter.Any()) // Apply only if filter is not empty.
+            {
+                // Filter out mismatched results.
+                searchResults.RemoveAll(m => !filter.Contains(m.Provider, StringComparer.OrdinalIgnoreCase));
+                // Reorder results by stable sort.
+                searchResults = searchResults.OrderBy(
+                    m => filter.FindIndex(s => s.Equals(m.Provider, StringComparison.OrdinalIgnoreCase))).ToList();
+            }
+            else
+            {
+                Logger.Warn("Movie provider filter enabled but never used");
+            }
+        }
+
         var results = new List<RemoteSearchResult>();
         if (!searchResults.Any())
         {
-            Logger.Warn("Movie not found: {0}", pid.Id);
+            Logger.Warn("Movie not found or has been filtered: {0}", pid.Id);
             return results;
-        }
-
-        if (Configuration.EnableMovieProviderFilter)
-        {
-            var filter = Configuration.GetMovieProviderFilter();
-            // Filter out mismatched results.
-            searchResults.RemoveAll(m => !filter.Contains(m.Provider, StringComparer.OrdinalIgnoreCase));
-            // Reorder results by stable sort.
-            searchResults = searchResults
-                .OrderBy(m => filter.FindIndex(s => s.Equals(m.Provider, StringComparison.OrdinalIgnoreCase))).ToList();
         }
 
         foreach (var m in searchResults)
